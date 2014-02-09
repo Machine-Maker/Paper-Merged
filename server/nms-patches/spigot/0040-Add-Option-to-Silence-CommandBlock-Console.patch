@@ -1,0 +1,22 @@
+From 14e5f0ce13a3c4bf181a7d1eb164f2877f1593e5 Mon Sep 17 00:00:00 2001
+From: md_5 <git@md-5.net>
+Date: Sun, 9 Feb 2014 14:39:01 +1100
+Subject: [PATCH] Add Option to Silence CommandBlock Console
+
+
+diff --git a/src/main/java/net/minecraft/commands/CommandListenerWrapper.java b/src/main/java/net/minecraft/commands/CommandListenerWrapper.java
+index 6d5f03464..83b389284 100644
+--- a/src/main/java/net/minecraft/commands/CommandListenerWrapper.java
++++ b/src/main/java/net/minecraft/commands/CommandListenerWrapper.java
+@@ -278,7 +278,7 @@ public class CommandListenerWrapper implements ICompletionProvider {
+             }
+         }
+ 
+-        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS)) {
++        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
+             this.server.sendSystemMessage(ichatmutablecomponent);
+         }
+ 
+-- 
+2.37.0
+
