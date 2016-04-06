@@ -16,6 +16,8 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.util.LazyPlayerSet;
 import org.bukkit.craftbukkit.util.Waitable;
@@ -154,10 +156,16 @@ public final class ChatProcessor {
     }
 
     private static String legacyDisplayName(final CraftPlayer player) {
+        if (((org.bukkit.craftbukkit.CraftWorld) player.getWorld()).getHandle().paperConfig().scoreboards.useVanillaWorldScoreboardNameColoring) {
+            return LegacyComponentSerializer.legacySection().serialize(player.teamDisplayName()) + ChatColor.RESET;
+        }
         return player.getDisplayName();
     }
 
     private static Component displayName(final CraftPlayer player) {
+        if (((CraftWorld) player.getWorld()).getHandle().paperConfig().scoreboards.useVanillaWorldScoreboardNameColoring) {
+            return player.teamDisplayName();
+        }
         return player.displayName();
     }
 
