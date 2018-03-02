@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kyle Wood <kyle@denwav.dev>
+Date: Thu, 1 Mar 2018 19:37:52 -0600
+Subject: [PATCH] Add version history to version command
+
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index cd0365249dffc1704a349a5e419364bbf9e8543b..2f2e07094a362ea1f459da85eb9ef84945a6e206 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -194,6 +194,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         paperConfigurations.initializeWorldDefaultsConfiguration();
+         io.papermc.paper.command.PaperCommands.registerCommands(this);
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
++        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
+         // Paper end
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
