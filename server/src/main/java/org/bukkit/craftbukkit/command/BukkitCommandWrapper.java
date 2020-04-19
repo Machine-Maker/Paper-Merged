@@ -17,7 +17,7 @@ import net.minecraft.commands.CommandSourceStack;
 import org.bukkit.command.Command;
 import org.bukkit.craftbukkit.CraftServer;
 
-public class BukkitCommandWrapper implements com.mojang.brigadier.Command<CommandSourceStack>, Predicate<CommandSourceStack>, SuggestionProvider<CommandSourceStack> {
+public class BukkitCommandWrapper implements com.mojang.brigadier.Command<CommandSourceStack>, Predicate<CommandSourceStack>, SuggestionProvider<CommandSourceStack>, com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<CommandSourceStack> { // Paper
 
     private final CraftServer server;
     private final Command command;
@@ -28,10 +28,19 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
     }
 
     public LiteralCommandNode<CommandSourceStack> register(CommandDispatcher<CommandSourceStack> dispatcher, String label) {
-        return dispatcher.register(
-                LiteralArgumentBuilder.<CommandSourceStack>literal(label).requires(this).executes(this)
-                .then(RequiredArgumentBuilder.<CommandSourceStack, String>argument("args", StringArgumentType.greedyString()).suggests(this).executes(this))
-        );
+        // Paper start - Expose Brigadier to Paper-MojangAPI
+        com.mojang.brigadier.tree.RootCommandNode<CommandSourceStack> root = dispatcher.getRoot();
+        LiteralCommandNode<CommandSourceStack> literal = LiteralArgumentBuilder.<CommandSourceStack>literal(label).requires(this).executes(this).build();
+        com.mojang.brigadier.tree.ArgumentCommandNode<CommandSourceStack, String> defaultArgs = RequiredArgumentBuilder.<CommandSourceStack, String>argument("args", StringArgumentType.greedyString()).suggests(this).executes(this).build();
+        literal.addChild(defaultArgs);
+        com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent<CommandSourceStack> event = new com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent<>(label, this, this.command, root, literal, defaultArgs);
+        if (!event.callEvent()) {
+            return null;
+        }
+        literal = event.getLiteral();
+        root.addChild(literal);
+        return literal;
+        // Paper end
     }
 
     @Override
