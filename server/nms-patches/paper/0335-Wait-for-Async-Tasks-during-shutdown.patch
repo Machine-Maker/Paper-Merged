@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 May 2020 22:16:17 -0400
+Subject: [PATCH] Wait for Async Tasks during shutdown
+
+Server.reload() had this logic to give time for tasks to shutdown,
+however shutdown did not...
+
+Adds a 5 second grace period for any async tasks to finish and warns
+if any are still running after that delay just as reload does.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 407cfb88d3a6c9c699ca42df2642d9f6fad87cbd..df40ab29f928fa31ccedb9afb64da7e193a8d1f7 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -907,6 +907,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // CraftBukkit start
+         if (this.server != null) {
+             this.server.disablePlugins();
++            this.server.waitForAsyncTasksShutdown(); // Paper
+         }
+         // CraftBukkit end
+         if (this.getConnection() != null) {
