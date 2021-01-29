@@ -13,10 +13,17 @@ import org.apache.commons.lang.Validate;
 
 public class CraftMerchantCustom extends CraftMerchant {
 
+    @Deprecated // Paper - Adventure
     public CraftMerchantCustom(String title) {
         super(new MinecraftMerchant(title));
         this.getMerchant().craftMerchant = this;
     }
+    // Paper start
+    public CraftMerchantCustom(net.kyori.adventure.text.Component title) {
+        super(new MinecraftMerchant(title));
+        getMerchant().craftMerchant = this;
+    }
+    // Paper end
 
     @Override
     public String toString() {
@@ -36,10 +43,17 @@ public class CraftMerchantCustom extends CraftMerchant {
         private Level tradingWorld;
         protected CraftMerchant craftMerchant;
 
+        @Deprecated // Paper - Adventure
         public MinecraftMerchant(String title) {
             Validate.notNull(title, "Title cannot be null");
             this.title = Component.literal(title);
         }
+        // Paper start
+        public MinecraftMerchant(net.kyori.adventure.text.Component title) {
+            Validate.notNull(title, "Title cannot be null");
+            this.title = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
+        }
+        // Paper end
 
         @Override
         public CraftMerchant getCraftMerchant() {
