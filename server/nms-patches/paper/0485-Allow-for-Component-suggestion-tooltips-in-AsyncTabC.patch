@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 1 Apr 2021 00:34:02 -0700
+Subject: [PATCH] Allow for Component suggestion tooltips in
+ AsyncTabCompleteEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index f582c7c41022c8b94ea6c7bc0ac9312499e7c434..6fb7bfd504839cc4a6f38ec9f99a571a1396e222 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -803,12 +803,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+         // Paper start - async tab completion
+         com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event;
+-        java.util.List<String> completions = new java.util.ArrayList<>();
+         String buffer = packet.getCommand();
+-        event = new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(this.getCraftPlayer(), completions,
++        event = new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(this.getCraftPlayer(),
+                 buffer, true, null);
+         event.callEvent();
+-        completions = event.isCancelled() ? com.google.common.collect.ImmutableList.of() : event.getCompletions();
++        java.util.List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> completions = event.isCancelled() ? com.google.common.collect.ImmutableList.of() : event.completions();
+         // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
+         if (!event.isHandled()) {
+             if (!event.isCancelled()) {
+@@ -827,10 +826,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 });
+             }
+         } else if (!completions.isEmpty()) {
+-            com.mojang.brigadier.suggestion.SuggestionsBuilder builder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packet.getCommand(), stringreader.getTotalLength());
++            com.mojang.brigadier.suggestion.SuggestionsBuilder builder0 = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packet.getCommand(), stringreader.getTotalLength());
+ 
+-            builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
+-            completions.forEach(builder::suggest);
++            final com.mojang.brigadier.suggestion.SuggestionsBuilder builder = builder0.createOffset(builder0.getInput().lastIndexOf(' ') + 1);
++            completions.forEach(completion -> {
++                final Integer intSuggestion = com.google.common.primitives.Ints.tryParse(completion.suggestion());
++                if (intSuggestion != null) {
++                    builder.suggest(intSuggestion, PaperAdventure.asVanilla(completion.tooltip()));
++                } else {
++                    builder.suggest(completion.suggestion(), PaperAdventure.asVanilla(completion.tooltip()));
++                }
++            });
+             com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
+             com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, buffer);
+             suggestEvent.setCancelled(suggestions.isEmpty());
