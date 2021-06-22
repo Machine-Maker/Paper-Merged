@@ -46,6 +46,77 @@ public class CraftPanda extends CraftAnimals implements Panda {
     public void setHiddenGene(Gene gene) {
         this.getHandle().setHiddenGene(CraftPanda.toNms(gene));
     }
+    // Paper start - Panda API
+    @Override
+    public void setSneezeTicks(int ticks) {
+        this.getHandle().setSneezeCounter(ticks);
+    }
+
+    @Override
+    public int getSneezeTicks() {
+        return this.getHandle().getSneezeCounter();
+    }
+
+    @Override
+    public void setSneezing(boolean sneeze) {
+        this.getHandle().sneeze(sneeze);
+    }
+
+    @Override
+    public boolean isSneezing() {
+        return this.getHandle().isSneezing();
+    }
+
+    @Override
+    public void setEatingTicks(int ticks) {
+        this.getHandle().setEatCounter(ticks);
+    }
+
+    @Override
+    public int getEatingTicks() {
+        return this.getHandle().getEatCounter();
+    }
+
+    @Override
+    public void setUnhappyTicks(int ticks) {
+        this.getHandle().setUnhappyCounter(ticks);
+    }
+
+    @Override
+    public int getUnhappyTicks() {
+        return this.getHandle().getUnhappyCounter();
+    }
+
+    @Override
+    public boolean isRolling() {
+        return this.getHandle().isRolling();
+    }
+
+    @Override
+    public void setRolling(boolean rolling) {
+        this.getHandle().roll(rolling);
+    }
+
+    @Override
+    public boolean isOnBack() {
+        return this.getHandle().isOnBack();
+    }
+
+    @Override
+    public void setIsOnBack(boolean onBack) {
+        this.getHandle().setOnBack(onBack);
+    }
+
+    @Override
+    public boolean isSitting() {
+        return this.getHandle().isSitting();
+    }
+
+    @Override
+    public void setSitting(boolean sitting) {
+        this.getHandle().sit(sitting);
+    }
+    // Paper end - Panda API
 
     @Override
     public boolean isRolling() {
