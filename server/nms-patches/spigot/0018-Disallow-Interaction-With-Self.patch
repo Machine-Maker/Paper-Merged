@@ -1,0 +1,27 @@
+From e4906a0e83dc3d5ee6e7918e47d58678c59709b1 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Fri, 28 Jun 2013 19:52:54 +1000
+Subject: [PATCH] Disallow Interaction With Self
+
+
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+index 051e70977..5c8ac3222 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+@@ -2238,6 +2238,13 @@ public class PlayerConnection implements ServerPlayerConnection, PacketListenerP
+         if (this.player.isImmobile()) return; // CraftBukkit
+         WorldServer worldserver = this.player.getLevel();
+         final Entity entity = packetplayinuseentity.getTarget(worldserver);
++        // Spigot Start
++        if ( entity == player && !player.isSpectator() )
++        {
++            disconnect( "Cannot interact with self!" );
++            return;
++        }
++        // Spigot End
+ 
+         this.player.resetLastActionTime();
+         this.player.setShiftKeyDown(packetplayinuseentity.isUsingSecondaryAction());
+-- 
+2.37.0
+

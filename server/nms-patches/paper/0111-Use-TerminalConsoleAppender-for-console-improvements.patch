@@ -1,0 +1,144 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Fri, 9 Jun 2017 19:03:43 +0200
+Subject: [PATCH] Use TerminalConsoleAppender for console improvements
+
+Rewrite console improvements (console colors, tab completion,
+persistent input line, ...) using JLine 3.x and TerminalConsoleAppender.
+
+New features:
+  - Support console colors for Vanilla commands
+  - Add console colors for warnings and errors
+  - Server can now be turned off safely using CTRL + C. JLine catches
+    the signal and the implementation shuts down the server cleanly.
+  - Support console colors and persistent input line when running in
+    IntelliJ IDEA
+
+Other changes:
+  - Server starts 1-2 seconds faster thanks to optimizations in Log4j
+    configuration
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 454c3a678886649c268992bc67c6cec83cb04b76..037749e1f6a6dcd53fc4455869f5b41417ae8e94 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -157,7 +157,7 @@ import org.slf4j.Logger;
+ import com.mojang.serialization.DynamicOps;
+ import com.mojang.serialization.Lifecycle;
+ import java.util.Random;
+-import jline.console.ConsoleReader;
++// import jline.console.ConsoleReader; // Paper
+ import joptsimple.OptionSet;
+ import net.minecraft.server.bossevents.CustomBossEvents;
+ import net.minecraft.server.dedicated.DedicatedServer;
+@@ -268,7 +268,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public OptionSet options;
+     public org.bukkit.command.ConsoleCommandSender console;
+     public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
+-    public ConsoleReader reader;
++    //public ConsoleReader reader; // Paper
+     public static int currentTick = 0; // Paper - Further improve tick loop
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
+@@ -352,7 +352,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.datapackconfiguration = datapackconfiguration;
+         this.registryreadops = registryreadops;
+         this.vanillaCommandDispatcher = worldstem.dataPackResources().commands; // CraftBukkit
++        // Paper start - Handled by TerminalConsoleAppender
+         // Try to see if we're actually running in a terminal, disable jline if not
++        /*
+         if (System.console() == null && System.getProperty("jline.terminal") == null) {
+             System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+             Main.useJline = false;
+@@ -373,6 +375,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 MinecraftServer.LOGGER.warn((String) null, ex);
+             }
+         }
++        */
++        // Paper end
+         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
+         this.paperConfigurations = services.paperConfigurations(); // Paper
+     }
+@@ -1139,7 +1143,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 org.spigotmc.WatchdogThread.doStop(); // Spigot
+                 // CraftBukkit start - Restore terminal to original settings
+                 try {
+-                    this.reader.getTerminal().restore();
++                    net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+                 } catch (Exception ignored) {
+                 }
+                 // CraftBukkit end
+@@ -1553,7 +1557,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @Override
+     public void sendSystemMessage(Component message) {
+-        MinecraftServer.LOGGER.info(message.getString());
++        MinecraftServer.LOGGER.info(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
+     }
+ 
+     public KeyPair getKeyPair() {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index ee509d7b06a9785a39b59329a19531047953831b..b248c0f481436b1b101dc1f75eaaf8023f4ba0ea 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -103,6 +103,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                 if (!org.bukkit.craftbukkit.Main.useConsole) {
+                     return;
+                 }
++                // Paper start - Use TerminalConsoleAppender
++                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
++                /*
+                 jline.console.ConsoleReader bufferedreader = reader;
+ 
+                 // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
+@@ -134,7 +137,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                             continue;
+                         }
+                         if (s.trim().length() > 0) { // Trim to filter lines which are just spaces
+-                            DedicatedServer.this.handleConsoleInput(s, DedicatedServer.this.createCommandSourceStack());
++                            DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
+                         }
+                         // CraftBukkit end
+                     }
+@@ -142,6 +145,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                     DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
+                 }
+ 
++                */
++                // Paper end
+             }
+         };
+ 
+@@ -153,6 +158,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+         global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
+ 
++        // Paper start - Not needed with TerminalConsoleAppender
++        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
++        /*
+         final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
+         for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
+             if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
+@@ -161,6 +169,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
++        */
++        // Paper end
+ 
+         System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
+         System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index b28bb51e5476b250d9de91f2e380dd8ed2aa7041..9cb9e0a4d1467cb5c23dfd38e83d495a3907d984 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -159,8 +159,7 @@ public abstract class PlayerList {
+ 
+     public PlayerList(MinecraftServer server, RegistryAccess.Frozen registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
+         this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
+-        server.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
+-        server.reader.addCompleter(new org.bukkit.craftbukkit.command.ConsoleCommandCompleter(server.server));
++        server.console = new com.destroystokyo.paper.console.TerminalConsoleCommandSender(); // Paper
+         // CraftBukkit end
+ 
+         this.bans = new UserBanList(PlayerList.USERBANLIST_FILE);

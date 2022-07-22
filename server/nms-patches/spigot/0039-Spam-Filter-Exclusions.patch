@@ -1,0 +1,51 @@
+From 0379d4aa5e9f7b55fb323805c0b184c3fad4e0f8 Mon Sep 17 00:00:00 2001
+From: md_5 <md_5@live.com.au>
+Date: Sat, 8 Feb 2014 08:13:40 +0000
+Subject: [PATCH] Spam Filter Exclusions
+
+
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+index 8ad41b14a..642340c8f 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+@@ -1814,7 +1814,7 @@ public class PlayerConnection implements ServerPlayerConnection, PacketListenerP
+                 } finally {
+                     this.server.server.playerCommandState = false;
+                 }
+-                this.detectRateSpam(true);
++                this.detectRateSpam(true, "/" + serverboundchatcommandpacket.command()); // Spigot
+                 // CraftBukkit end
+             }
+ 
+@@ -1913,7 +1913,7 @@ public class PlayerConnection implements ServerPlayerConnection, PacketListenerP
+                 this.chat(s, true);
+             }
+             // this.server.getPlayerList().broadcastChatMessage(playerchatmessage, filteredtext, this.player, ChatMessageType.CHAT);
+-            this.detectRateSpam(false);
++            this.detectRateSpam(false, s); // Spigot
+             // CraftBukkit end
+         }
+     }
+@@ -2021,7 +2021,18 @@ public class PlayerConnection implements ServerPlayerConnection, PacketListenerP
+     // CraftBukkit end
+ 
+     // CraftBukkit start - replaced with thread safe throttle
+-    private void detectRateSpam(boolean isSync) {
++    // Spigot start - spam exclusions
++    private void detectRateSpam(boolean isSync, String s) {
++        boolean counted = true;
++        for ( String exclude : org.spigotmc.SpigotConfig.spamExclusions )
++        {
++            if ( exclude != null && s.startsWith( exclude ) )
++            {
++                counted = false;
++                break;
++            }
++        }
++        // Spigot end
+         // this.chatSpamTickCount += 20;
+         if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
+             if (!isSync) {
+-- 
+2.37.0
+

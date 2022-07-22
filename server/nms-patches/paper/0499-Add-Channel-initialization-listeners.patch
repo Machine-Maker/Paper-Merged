@@ -1,0 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Thu, 29 Apr 2021 21:19:33 +0200
+Subject: [PATCH] Add Channel initialization listeners
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 72fbc58f7d003b7af3c35e5fc504010307c7086b..076c1d5fb69a4a30b3e412e85b17db09fd9a1def 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -113,6 +113,7 @@ public class ServerConnectionListener {
+                     pending.add((Connection) object); // Paper
+                     channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
+                     ((Connection) object).setListener(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
++                    io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper
+                 }
+             }).group((EventLoopGroup) lazyinitvar.get()).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
+         }
