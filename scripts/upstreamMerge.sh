@@ -36,6 +36,6 @@ if [ "$updated" == "1" ]; then
     cd "$basedir"
     ./gradlew cleanCache || exit 1 # todo: Figure out why this is necessary
     ./gradlew applyPatches -Dpaperweight.debug=true || exit 1
-    ./gradlew rebuildPatches || exit 1
+    ./gradlew -Ppaperweight.filter-patches=false rebuildPatches || exit 1
 fi
 )
